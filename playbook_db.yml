@@ -1,0 +1,9 @@
+# Playbook of the db
+
+---
+
+- hosts: db
+  gather_facts: yes
+  become: true
+
+  tasks:

@@ -1,0 +1,27 @@
+# Playbook of the application
+
+---
+
+- hosts: web
+  gather_facts: yes
+  become: true
+
+  tasks:
+  - name: Clone a repo
+    ansible.builtin.git:
+      repo: https://github.com/alfonso-torres/eng84_CI_CD_Jenkins.git
+      dest: /home/ubuntu
+      clone: yes
+
+  - name: Install nginx
+    apt: pkg=nginx state=present
+
+  - name: Install PythonSoftwareProperties
+    apt: pkg=python-software-properties state=present
+
+  - name: run provision.sh script
+    shell:
+      cmd: bash /home/ubuntu/eng84_CI_CD_Jenkins/environment/app/provision.sh
+
+  - name: execute the command in remote shell; stdout goes to the specified file
+    ansible.builtin.shell: /home/ubuntu/eng84_CI_CD_Jenkins/environment/app/provision.sh >> somelog.txt

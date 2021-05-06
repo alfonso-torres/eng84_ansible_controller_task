@@ -1,0 +1,93 @@
+# Will launch an EC2 instances on AWS
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars:
+    key_name: eng84devops
+    region: eu-west-1
+    image: ami-038d7b856fe7557b3
+    public_sg: sg-09f8dc889da11564b
+    private_sg: sg-0e6dcd30088fdacdd
+    public_subnet: subnet-062c38c15879dce1f
+    private_subnet: subnet-03beba7a82f317bb8
+
+  vars_files:
+    - ./group_vars/all/pass.yml
+
+  tasks:
+
+  - name: Get info block
+    block:
+      - name: Print debug Info
+        debug: msg="{{aws_access_key}}"
+
+    tags: ['always', 'getinfoonly']
+
+  - name: Gathering facts
+    block:
+    - name: get instances facts
+      ec2_instance_facts:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ region }}"
+      register: result
+
+    tags: always
+
+  - name: Provisioning EC2 instances
+    block:
+
+    - name: Crontoller instance
+      ec2:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        key_name: "{{ key_name }}"
+        id: eng84_jose_ansible_control
+        vpc_subnet_id: "{{ public_subnet }}"
+        group_id: "{{ public_sg }}"
+        image: "{{ image }}"
+        instance_type: t2.micro
+        region: "{{ region }}"
+        wait: true
+        count: 1
+        assign_public_ip: yes
+        instance_tags:
+          Name: eng84_jose_ansible_controller
+
+    - name: App-web instance
+      ec2:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        key_name: "{{ key_name }}"
+        id: eng84_jose_ansible_web
+        vpc_subnet_id: "{{ public_subnet }}"
+        group_id: "{{ public_sg }}"
+        assign_public_ip: yes
+        image: "{{ image }}"
+        instance_type: t2.micro
+        region: "{{ region }}"
+        wait: true
+        count: 1
+        instance_tags:
+          Name: eng84_jose_ansible_app
+
+    - name: db instance
+      ec2:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        key_name: "{{ key_name }}"
+        id: eng84_jose_ansible_db
+        vpc_subnet_id: "{{ private_subnet }}"
+        group_id: "{{ private_sg }}"
+        assign_public_ip: yes
+        image: "{{ image }}"
+        instance_type: t2.micro
+        region: "{{ region }}"
+        wait: true
+        count: 1
+        instance_tags:
+          Name: eng84_jose_ansible_db
+
+    tags: ['never', 'create_ec2']
