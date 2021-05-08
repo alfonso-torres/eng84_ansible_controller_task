@@ -1,4 +1,4 @@
-# Playbook of the db
+# YAML to configure db
 
 ---
 
@@ -7,3 +7,54 @@
   become: true
 
   tasks:
+
+  - name: updating
+    shell:
+      cmd: apt-get update -y
+
+  - name: upgrading
+    shell:
+      cmd: apt-get upgrade -y
+
+  - name: installing mongodb
+    apt: pkg=mongodb state=present
+
+  - name: Removing mongodb file (delete file)
+    file:
+      path: /etc/mongodb.conf
+      state: absent
+
+  - name: Touching a file, using symbolic modes to set the permissions (equivalent to 0644)
+    file:
+      path: /etc/mongodb.conf
+      state: touch
+      mode: u=rw,g=r,o=r
+
+  - name: Inserting multiple lines and Backup
+    blockinfile:
+      path: /etc/mongodb.conf
+      block: |
+        # mongodb.conf
+        storage:
+          dbPath: /var/lib/mongodb
+          journal:
+            enabled: true
+        systemLog:
+          destination: file
+          logAppend: true
+          path: /var/log/mongodb/mongod.log
+        net:
+          port: 27017
+          bindIp: 0.0.0.0
+
+  - name: Restarting mongodb
+    become: true
+    shell: systemctl restart mongodb
+
+  - name: enabling mongodb
+    become: true
+    shell: systemctl enable mongodb
+
+  - name: starting mongodb
+    become: true
+    shell: systemctl start mongodb

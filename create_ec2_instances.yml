@@ -1,4 +1,4 @@
-# Will launch an EC2 instances on AWS
+# Will launch an EC2 instance on AWS
 ---
 - hosts: localhost
   connection: local
@@ -54,7 +54,7 @@
         count: 1
         assign_public_ip: yes
         instance_tags:
-          Name: eng84_jose_ansible_controller
+          Name: eng84_jose_ansible_controller_video
 
     - name: App-web instance
       ec2:
@@ -71,7 +71,7 @@
         wait: true
         count: 1
         instance_tags:
-          Name: eng84_jose_ansible_app
+          Name: eng84_jose_ansible_app_video
 
     - name: db instance
       ec2:
@@ -88,6 +88,7 @@
         wait: true
         count: 1
         instance_tags:
-          Name: eng84_jose_ansible_db
+          Name: eng84_jose_ansible_db_video
 
     tags: ['never', 'create_ec2']
+    

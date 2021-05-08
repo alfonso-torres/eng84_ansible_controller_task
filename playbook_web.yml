@@ -1,27 +1,85 @@
-# Playbook of the application
-
+# YAML to configure the web
 ---
 
-- hosts: web
+- hosts: app
   gather_facts: yes
   become: true
 
   tasks:
-  - name: Clone a repo
+
+  - name: Let's clear the path
+    file:
+      state: absent
+      path: /home/ubuntu/app
+
+  - name: Cloning the repository
     ansible.builtin.git:
       repo: https://github.com/alfonso-torres/eng84_CI_CD_Jenkins.git
-      dest: /home/ubuntu
+      dest: /home/ubuntu/app
       clone: yes
 
-  - name: Install nginx
+  - name: Permissions to execute the provision file
+    shell:
+      cmd: chmod +x /home/ubuntu/app/provision_web.sh
+
+  - name: updating
+    shell:
+      cmd: apt-get update -y
+
+  - name: upgrading
+    shell:
+      cmd: apt-get upgrade -y
+
+  - name: Installing Nginx
     apt: pkg=nginx state=present
 
-  - name: Install PythonSoftwareProperties
+  - name: run provision script for the app
+    shell:
+      cmd: bash /home/ubuntu/app/provision_web.sh
+
+  - name: Installing Python Properties
     apt: pkg=python-software-properties state=present
 
-  - name: run provision.sh script
-    shell:
-      cmd: bash /home/ubuntu/eng84_CI_CD_Jenkins/environment/app/provision.sh
+  - name: Adding nodejs apt key
+    apt_key:
+      url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+      state: present
 
-  - name: execute the command in remote shell; stdout goes to the specified file
-    ansible.builtin.shell: /home/ubuntu/eng84_CI_CD_Jenkins/environment/app/provision.sh >> somelog.txt
+  - name: Adding nodejs 13.x
+    apt_repository:
+      repo: deb https://deb.nodesource.com/node_13.x bionic main
+      update_cache: yes
+
+  - name: Installing nodejs
+    apt:
+      update_cache: yes
+      name: nodejs
+      state: present
+
+  - name: Installing NPM
+    npm:
+      global: yes
+      name: "{{ item }}"
+    with_items:
+      - firebase-tools
+
+  - name: downloading latest npm + Mongoose
+    shell: |
+      npm install -g npm@latest
+      npm install mongoose -y
+
+  - name: Installing pm2
+    npm:
+      name: pm2
+      global: yes
+
+  - name: seed + run app
+    shell: |
+      cd app/app/
+      npm install
+      node seeds/seed.js
+      pm2 kill
+      pm2 start app.js
+    environment:
+      DB_HOST: mongodb://private_ip_db:27017/posts?authSource=admin
+    become_user: root
